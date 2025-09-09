@@ -22,6 +22,12 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "app.h"
 
+extern "C" {
+	//TODO Remind me (Adrian Gjonca) to modify the auxmem headers for C++ support
+#include <auxmem.h>
+#include <auxmem/heap.h>
+}
+
 #include <errno.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -110,12 +116,25 @@ int App::Run(void)
 	const int ok = 0;
 
 	// Start up typesetter.
-
 	if (ts->Init() != ok)
 		halt("[FAIL] typesetter\n");
+	
+	//Loading Preferences
+	prefs->Read();
+
+	// Start up screens.
+	InitScreens();
+	SetOrientation(orientation);
+	ts->SetStyle(TEXT_STYLE_BROWSER);
+	ts->PrintSplash(ts->screenleft);
+	
+	// Initializing AUXMEM
+	PrintStatus("Initializing Swap... Please wait");
+	AM_init((const char * )"dslibris.swap", (size_t) 16 * 1024 * 1024); //16 MiB swap file
+	AMALLOC_init();
 
 	// Construct library.
-
+	PrintStatus("Loading Books... Please wait");
 	if (FindBooks() != ok)
 		halt("[FAIL] no book directory\n");
 	if (bookcount == 0)
@@ -123,40 +142,27 @@ int App::Run(void)
 
 	std::sort(books.begin(),books.end(),&book_title_lessthan);
 
-	prefs->Read();
 	for(auto &book : books)
 	{
 		book->Index();
 		book->GetBookmarks()->sort();
 	}
 
-	// Set up correct orientation
-	SetOrientation(orientation);
-	
-	// Start up screens.
-
-	InitScreens();
-	ts->SetStyle(TEXT_STYLE_BROWSER);
-	ts->PrintSplash(ts->screenleft);
-
 	// Set up menus.
-
 	PrefsInit();
 	browser_init();
 	browser_view_dirty = true;
-
+	
+	// Display Version
 	PrintStatus(VERSION);
 
 	// Resume reading from the last session.
-
-	// char msg[32]; sprintf(msg, "%d\n", bookcurrent); halt(msg);
 	if(reopen && bookcurrent) {
 		bookselected = bookcurrent;
 		OpenBook();
 	}
 
 
-	bgSetMapBase(ts->bg_main, 8);
 	keysSetRepeat(60,2);
 	while (pmMainLoop())
 	{
@@ -367,6 +373,8 @@ void App::InitScreens()
 	videoSetModeSub(MODE_5_2D);
 	vramSetBankC(VRAM_C_SUB_BG_0x06200000);
 	bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0,0);
+
+	bgSetMapBase(ts->bg_main, 8);
 	ts->SetScreen(ts->screenright);
 	ts->ClearScreen();
 	ts->SetScreen(ts->screenleft);
@@ -374,7 +382,7 @@ void App::InitScreens()
 	if(!invert) {
 		lcdSwap();
 	}
-	SetOrientation(orientation);
+	ts->UpdateMain();
 }
 
 void App::PrintStatus(const char *msg)
