@@ -7,9 +7,9 @@ DEVKITARM ?= /opt/devkitpro/devkitARM
 
 VERSION ?= $(cat include/version.h)
 
-GAME_TITLE := dslibris
-GAME_SUBTITLE1 := An EPUB ebook reader [$(VERSION)]
-GAME_SUBTITLE2 := https://github.com/rhaleblian/dslibris
+GAME_TITLE := DSLibris
+GAME_SUBTITLE1 := An EPUB ebook reader 
+GAME_SUBTITLE2 := Ray H., Adrian Gj. Et al.
 GAME_ICON := $(PWD)/gfx/icon.bmp
 
 include $(DEVKITARM)/ds_rules

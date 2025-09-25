@@ -26,6 +26,8 @@ A Book contains a vector of Pages.
 #pragma once
 
 #include <nds.h>
+#include <auxmem.h>
+
 #include "book.h"
 #include "text.h"
 
@@ -36,6 +38,7 @@ class Page {
  public:
 	//! UTF-8 chars, allocated per-page at parse time, to exact length.
 	u8 *buf;
+	//AM_addr_t buffer;
 	//! Length of buf.
 	int length;
 	//! In a book-long char buffer, where would i begin?
@@ -45,7 +48,7 @@ class Page {
 	Page(Book *b);
 	Page(Book *b, Text *t);
 	~Page();
-	u8*  GetBuffer() { return buf; }
+	//u8*  GetBuffer() { return (u8*)"TEST"; } //TODO
 	int  GetLength() { return length; }
 	//! Copy src to buf for len bytes.
 	u8   SetBuffer(u8 *src, u16 len); 

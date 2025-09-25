@@ -22,11 +22,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #include "app.h"
 
-extern "C" {
-	//TODO Remind me (Adrian Gjonca) to modify the auxmem headers for C++ support
 #include <auxmem.h>
 #include <auxmem/heap.h>
-}
 
 #include <errno.h>
 #include <stdlib.h>
@@ -37,6 +34,7 @@ extern "C" {
 #include <unistd.h>
 #include <algorithm>   // for std::sort
 #include <fat.h>
+#include <string>
 
 #include "main.h"
 #include "parse.h"
@@ -128,10 +126,13 @@ int App::Run(void)
 	ts->SetStyle(TEXT_STYLE_BROWSER);
 	ts->PrintSplash(ts->screenleft);
 	
+	/*
 	// Initializing AUXMEM
 	PrintStatus("Initializing Swap... Please wait");
-	AM_init((const char * )"dslibris.swap", (size_t) 16 * 1024 * 1024); //16 MiB swap file
-	AMALLOC_init();
+	AM_init((const char * )"dslibris.swap", (size_t) 16 * 1024 * 1024); //16 MiB swap file (investigate why I can't go higher)
+	AMALLOC_init(128);
+	//AM_setbyte(0x01, 0xFF);
+	*/
 
 	// Construct library.
 	PrintStatus("Loading Books... Please wait");
@@ -141,7 +142,7 @@ int App::Run(void)
 		halt("[FAIL] no books\n");
 
 	std::sort(books.begin(),books.end(),&book_title_lessthan);
-
+	prefs->Read(); //For some daft reason we need to load this twice else you allways start from the first page
 	for(auto &book : books)
 	{
 		book->Index();
@@ -154,7 +155,8 @@ int App::Run(void)
 	browser_view_dirty = true;
 	
 	// Display Version
-	PrintStatus(VERSION);
+	std::string status = "version ";
+	PrintStatus((status + VERSION).c_str());
 
 	// Resume reading from the last session.
 	if(reopen && bookcurrent) {

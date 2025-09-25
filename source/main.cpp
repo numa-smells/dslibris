@@ -20,11 +20,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 */
 
-extern "C" {
-	//TODO Remind me (Adrian Gjonca) to modify the auxmem headers for C++ support
 #include <auxmem.h>
 #include <auxmem/heap.h>
-}
 
 #include "main.h"
 

@@ -24,6 +24,7 @@
 #include FT_FREETYPE_H
 #include "nds.h"
 #include "splash.h"
+#include "app.h"
 
 #define MARGINLEFT 12
 #define MARGINRIGHT 12
@@ -53,3 +54,5 @@ int halt(const char *msg, int vblanks = -1);
 int getSize(u8 *source, u16 *dest, u32 arg);
 u8 readByte(u8 *source);
 void drawstack(u16 *screen);
+
+extern App* app;

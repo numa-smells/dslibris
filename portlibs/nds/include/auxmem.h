@@ -1,3 +1,7 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef AUXMEM_H
 #define AUXMEM_H
 
@@ -29,4 +33,8 @@ extern void AM_setstring(AM_addr_t address, const char * string);
 
 extern void AM_quit();
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif
