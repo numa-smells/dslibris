@@ -333,6 +333,49 @@ void Text::ClearScreen()
 	}
 }
 
+void Text::ClearScreenSpecial()
+{
+	u16 clr_A = RGB15(12,7,2)|BIT(15);
+	u16 clr_B = RGB15(7,2,0)|BIT(15);
+
+	int halfheight = display.height >> 1;
+	int halfwidth = display.width >> 1;
+
+	for(int y = 0; y < display.height; y++){
+		for(int x = 0; x < display.width; x++) {
+			int a = x + y;
+			int b = x - y;
+		
+			int d = abs(x - halfwidth) + abs(y - halfheight);
+
+			if(d > 70) {
+				if((x < halfwidth && y < halfheight) ||
+				   (x > halfwidth && y > halfheight)) {
+					if(a % 4) {
+						screen[y*display.height+x] = clr_A;
+					}else {
+						screen[y*display.height+x] = clr_B;
+					}
+				}else {
+					if(b % 4) {
+						screen[y*display.height+x] = clr_A;
+					}else {
+						screen[y*display.height+x] = clr_B;
+					}
+				}
+			}else {
+				if(!(x % 4 && y % 4)) {
+					screen[y*display.height+x] = clr_A;
+				}else {
+					screen[y*display.height+x] = clr_B;
+				}
+
+			}
+		}
+	}
+}
+
+
 void Text::ClearRect(u16 xl, u16 yl, u16 xh, u16 yh)
 {
 	u16 clearcolor;
@@ -626,9 +669,10 @@ void Text::PrintChar(u32 ucs, FT_Face face) {
 			u16 sy = (pen.y+gy-by);
 			u16 layerBottom = screen[sy*display.height+sx];
 			int r,g,b;
-			r = 0x1F & (layerBottom >> 10);
+			//DS seems to use BGR not RGB
+			r = 0x1F & (layerBottom >> 0);
 			g = 0x1F & (layerBottom >> 5);
-			b = 0x1F & (layerBottom);
+			b = 0x1F & (layerBottom >> 10);
 		
 			
 			if(invert) {
@@ -643,7 +687,7 @@ void Text::PrintChar(u32 ucs, FT_Face face) {
 			r = r<0 ? 0 : r;
 			g = g<0 ? 0 : g;
 			b = b<0 ? 0 : b;
-
+			
 			r = r>31 ? 31 : r;
 			g = g>31 ? 31 : g;
 			b = b>31 ? 31 : b;

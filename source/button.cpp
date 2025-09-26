@@ -67,7 +67,7 @@ void Button::Resize(u16 x, u16 y) {
 	extent.y = y;
 }
 
-void Button::Draw(u16 *screen, bool highlight) {
+void Button::Draw(u16 *screen, bool highlight, bool ui) {
 	// push state
 	auto save_screen = ts->GetScreen();
 	auto save_style = ts->GetStyle();
@@ -85,40 +85,39 @@ void Button::Draw(u16 *screen, bool highlight) {
 	ts->SetScreen(screen);
 	ts->SetStyle(text.style);
 
-	for (y=ul.y;y<lr.y;y++) {
+	for (y=ul.y+3;y<lr.y-3;y++) {
 		int g = 100 - 100 * (y - ul.y) / (lr.y - ul.y);
 		
 		if(highlight) g = 100 - g;
 
 		int gi = (31-5) + g * 5 / 100;
+		int gi_d2 = gi >> 1;
 
 		for (x=ul.x+2;x<lr.x-2;x++) {
-			if(!highlight)
-				screen[y*w + x] = RGB15(gi,gi-2,gi-2)|BIT(15);
-			else
+			if(highlight)
+				screen[y*w + x] = RGB15(gi_d2-1,gi-2,gi_d2-3)|BIT(15);
+			else if(!ui)
+				screen[y*w + x] = RGB15(gi-2,gi_d2-1,gi_d2-3)|BIT(15);
+			else 
+				screen[y*w + x] = RGB15(gi-2, gi-2, gi)|BIT(15);
 
-				screen[y*w + x] = RGB15(gi-2,gi,gi-2)|BIT(15);
 		}
 	}
-
-	u16 bordercolor = RGB15(31,31,31)|BIT(15);
-	u16 bordercolor2 = RGB15(20,20,20)|BIT(15);
+	
+	u16 bordercolor = RGB15(20,10,10)|BIT(15);
+	if(ui) {
+		bordercolor = RGB15(8,8,8)|BIT(15);
+	}
 	if(highlight) {
-		bordercolor2 = RGB15(3,3,3)|BIT(15);
+		bordercolor = RGB15(3,3,3)|BIT(15);
 	}
 	for (int x=ul.x+2;x<lr.x-2;x++) {
-		screen[ul.y*w + x] = bordercolor;
-		screen[(ul.y+1)*w + x] = bordercolor;
-		screen[(ul.y+2)*w + x] = bordercolor;
-		screen[(ul.y+3)*w + x] = bordercolor2;
-
-		screen[(lr.y-1)*w + x] = bordercolor;
-		screen[(lr.y-2)*w + x] = bordercolor;
-		screen[(lr.y-3)*w + x] = bordercolor2;
+		screen[(ul.y+3)*w + x] = bordercolor;
+		screen[(lr.y-3)*w + x] = bordercolor;
 	}
 	for (int y=ul.y+4;y<lr.y-3;y++) {
-		screen[y*w + ul.x+1] = bordercolor2;
-		screen[y*w + lr.x-2] = bordercolor2;
+		screen[y*w + ul.x+1] = bordercolor;
+		screen[y*w + lr.x-2] = bordercolor;
 	}
 
 	

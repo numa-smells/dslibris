@@ -143,6 +143,7 @@ class Text {
 	void ClearRect(u16 xl, u16 yl, u16 xh, u16 yh);
 	void ClearScreen();
 	void ClearScreen(u16*, u8, u8, u8);
+	void ClearScreenSpecial();
 	void CopyScreen(u16 *src, u16 *dst);
 	void SwapScreens();
 

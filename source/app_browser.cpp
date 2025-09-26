@@ -201,20 +201,20 @@ void App::browser_draw(void)
 	
 	ts->SetScreen(ts->screenright);
 	ts->SetInvert(false);
-	ts->ClearScreen();
+	ts->ClearScreenSpecial();
 	for (int i=browserstart;
 		(i<bookcount) && (i<browserstart+APP_BROWSER_BUTTON_COUNT);
 		i++)
 	{
-		buttons[i]->Draw(ts->screenright,books[i]==bookselected);
+		buttons[i]->Draw(ts->screenright,books[i]==bookselected, false);
 	}
 	
 	if(browserstart >= APP_BROWSER_BUTTON_COUNT)
-		buttonprev.Draw(ts->screenright,false);
+		buttonprev.Draw(ts->screenright,false, true);
 	if(bookcount > browserstart+APP_BROWSER_BUTTON_COUNT)
-		buttonnext.Draw(ts->screenright,false);
+		buttonnext.Draw(ts->screenright,false, true);
 
-	buttonprefs.Draw(ts->screenright,false);
+	buttonprefs.Draw(ts->screenright,false, true);
 
 	// restore state.
 	ts->SetInvert(invert);

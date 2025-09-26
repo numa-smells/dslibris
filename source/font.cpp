@@ -132,7 +132,7 @@ void FontMenu::handleTouchInput() {
 
 void FontMenu::draw()
 {
-	app->ts->ClearScreen();
+	app->ts->ClearScreenSpecial();
 	for (u8 i = page * pagesize;
 		(i < buttons.size()) && (i < (page + 1) * pagesize);
 		i++)

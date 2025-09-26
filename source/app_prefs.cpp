@@ -57,12 +57,12 @@ void App::PrefsDraw()
 
 	ts->SetScreen(ts->screenright);
 	ts->SetInvert(false);
-	ts->ClearScreen();
+	ts->ClearScreenSpecial();
 
 	for (int i=0; i<PREFS_BUTTON_COUNT; i++)
-		prefsButtons[i].Draw(ts->screenright, i==prefsSelected);
+		prefsButtons[i].Draw(ts->screenright, i==prefsSelected, true);
 
-	buttonprefs.Draw(ts->screenright);
+	buttonprefs.Draw(ts->screenright, false, true);
 
 	// restore state
 	ts->SetStyle(style);

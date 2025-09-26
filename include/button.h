@@ -49,9 +49,9 @@ class Button {
 	//! label on second line, used for author in the library screen.
 	void SetLabel2(std::string s);
 	inline void SetStyle(int astyle) { style = astyle; };
-	void Draw(u16 *fb, bool highlight = false);
+	void Draw(u16 *fb, bool highlight, bool ui);
 	inline void Draw(bool highlight = false) {
-		Draw(ts->GetScreen(), highlight);
+		Draw(ts->GetScreen(), highlight, true);
 	}
 	void Move(u16 x, u16 y);
 	void Resize(u16 x, u16 y);
