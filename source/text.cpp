@@ -36,7 +36,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define PIXELSIZE 12
 #define EXPERIMENTAL_KERNING
-#define LCD_VERTICAL
 extern char msg[];
 std::stringstream ss;
 
