@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
 #define PIXELSIZE 12
 #define EXPERIMENTAL_KERNING
-
+#define LCD_VERTICAL
 extern char msg[];
 std::stringstream ss;
 
@@ -237,9 +237,14 @@ int Text::CacheGlyph(u32 ucs, FT_Face face)
 	//! The caller should have checked first.
 
 	if(textCache[face]->cacheMap.size() == CACHESIZE) return -1;
-
+#ifdef LCD_VERTICAL
 	FT_Load_Char(face, ucs,
 		FT_LOAD_RENDER|FT_LOAD_TARGET_LCD);
+#else
+	FT_Load_Char(face, ucs,
+		FT_LOAD_DEFAULT|FT_LOAD_TARGET_LIGHT);
+	FT_Render_Glyph(face->glyph, FT_RENDER_MODE_LCD_V);
+#endif
 	FT_GlyphSlot src = face->glyph;
 	FT_GlyphSlot dst = new FT_GlyphSlotRec;
 	int x = src->bitmap.rows;
@@ -273,7 +278,11 @@ int Text::GetGlyphBitmap(u32 ucs, FTC_SBit *sbit, FTC_Node *anode)
 	if (!ftc) return 1;
 	imagetype.face_id = (FTC_FaceID)&face_id;
 	imagetype.height = pixelsize;
+#ifdef LCD_VERTICAL
 	imagetype.flags = FT_LOAD_RENDER;
+#else
+	imagetype.flags = FT_LOAD_DEFAULT;
+#endif
 	return FTC_SBitCache_Lookup(cache.sbit,&imagetype,
 		GetGlyphIndex(ucs),sbit,anode);
 }
@@ -298,6 +307,10 @@ FT_GlyphSlot Text::GetGlyph(u32 ucs, int flags, FT_Face face)
 
 	// Cache is full, look up directly.
 	FT_Load_Char(face, ucs, flags);
+#ifdef LCD_VERTICAL
+#else
+	FT_Render_Glyph(face->glyph, FT_RENDER_MODE_LCD_V);
+#endif
 	return face->glyph;
 }
 
@@ -663,8 +676,9 @@ void Text::PrintChar(u32 ucs, FT_Face face) {
 	// Mark the pen position.
 	screen[pen.y*display.height+pen.x] = RGB15(0, 0, 0) | BIT(15);
 #endif
+#ifdef LCD_VERTICAL
 
-    u8 offset = (u32(pen.x) % 64) / 22; //0, 1, or 2. number of subpixels to shift by.
+	u8 offset = (u32(pen.x) % 64) / 22; //0, 1, or 2. number of subpixels to shift by.
 	u16 gx, gy;
 	for (gy=0; gy<height; gy++)
 	{
@@ -714,9 +728,11 @@ void Text::PrintChar(u32 ucs, FT_Face face) {
 
 			if (offset > 0){
 				//supersampling rather than rgb-ing. maybe ill do both in the future
-				ab = buffer[gy*pitch+gx*3+3-offset];
-				ag = offset>1 ? 0 : buffer[gy*pitch+gx*3+4 - offset];
+
+				ab = offset<=0 ? 0 : buffer[gy*pitch+gx*3+3 - offset];
+				ag = offset<=1 ? 0 : buffer[gy*pitch+gx*3+4 - offset];
 				ar = 0;
+
 				if (!(ab|ag|ar)) continue;
 				//if (!invert) a = 256 - a;
 
@@ -759,6 +775,106 @@ void Text::PrintChar(u32 ucs, FT_Face face) {
 
 	if (ftc && anode)
 		FTC_Node_Unref(anode, cache.manager);
+#else
+    u8 offset = (u32(pen.y) % 64) / 22; //0, 1, or 2. number of subpixels to shift by.
+	u16 gx, gy;
+	for (gy=0; gy<height/3; gy++)
+	{
+		for (gx=0; gx<width; gx++)
+		{
+			//supersampling rather than rgb-ing. maybe ill do both in the future
+			u8 ar = offset>0 ? 0 : buffer[(gy*3)*pitch+gx];
+			u8 ag = offset>1 ? 0 : buffer[(gy*3+1 - offset)*pitch+gx];
+			u8 ab = buffer[(gy*3+2 - offset)*pitch+gx];
+			if (!(ab|ag|ar)) continue;
+			//if (!invert) a = 256 - a;
+
+			u16 sx = (pen.x/64+gx+bx);
+			u16 sy = (pen.y/64+gy-by);
+			u16 layerBottom = screen[sy*display.height+sx];
+			int r,g,b;
+			//DS seems to use BGR not RGB
+			r = 0x1F & (layerBottom >> 0);
+			g = 0x1F & (layerBottom >> 5);
+			b = 0x1F & (layerBottom >> 10);
+
+			if(invert) {
+				b+=(int)ab>>3;
+				g+=(int)ag>>3;
+				r+=(int)ar>>3;
+			}else {
+				b-=(int)ab>>3;
+				g-=(int)ag>>3;
+				r-=(int)ar>>3;
+			}
+
+			r = r<0 ? 0 : r;
+			g = g<0 ? 0 : g;
+			b = b<0 ? 0 : b;
+			
+			r = r>31 ? 31 : r;
+			g = g>31 ? 31 : g;
+			b = b>31 ? 31 : b;
+
+			u16 pixel = RGB15(r,g,b) | BIT(15);
+			
+#ifdef DRAW_CACHE_MISSES
+			// if(!hit) pixel = RGB15(a>>3,0,0) | BIT(15);
+#endif
+			
+			screen[sy*display.height+sx] = pixel;
+
+			if (offset > 0){
+				//supersampling rather than rgb-ing. maybe ill do both in the future
+
+				ar = offset<=0 ? 0 : buffer[(gy*3+3 - offset)*pitch+gx];
+				ag = offset<=1 ? 0 : buffer[(gy*3+4 - offset)*pitch+gx];
+				ab = 0;
+
+				if (!(ab|ag|ar)) continue;
+				//if (!invert) a = 256 - a;
+
+				sx = (pen.x/64+gx+bx+1);
+				sy = (pen.y/64+gy-by);
+				layerBottom = screen[sy*display.height+sx];
+				int r,g,b;
+				//DS seems to use BGR not RGB
+				r = 0x1F & (layerBottom >> 0);
+				g = 0x1F & (layerBottom >> 5);
+				b = 0x1F & (layerBottom >> 10);
+			
+				
+				if(invert) {
+					b+=(int)ab>>3;
+					g+=(int)ag>>3;
+					r+=(int)ar>>3;
+				}else {
+					b-=(int)ab>>3;
+					g-=(int)ag>>3;
+					r-=(int)ar>>3;
+				}
+				r = r<0 ? 0 : r;
+				g = g<0 ? 0 : g;
+				b = b<0 ? 0 : b;
+				
+				r = r>31 ? 31 : r;
+				g = g>31 ? 31 : g;
+				b = b>31 ? 31 : b;
+
+				pixel = RGB15(r,g,b) | BIT(15);
+				
+				screen[sy*display.height+sx] = pixel;
+			}
+		}
+	}
+
+	pen.x += advance;
+	codeprev = ucs;
+
+	if (ftc && anode)
+		FTC_Node_Unref(anode, cache.manager);    
+#endif
+
 }
 
 bool Text::PrintNewLine(void) {
